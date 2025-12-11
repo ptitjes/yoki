@@ -17,14 +17,14 @@ repositories {
 }
 
 dependencies {
-    implementation("me.devnatan:docker-kotlin:<version>")
+    implementation("me.devnatan:docker-kotlin:0.8.0")
 }
 ```
 
 For JVM users, use the Docker client JVM artifact
 
 ```groovy
-implementation 'me.devnatan:docker-kotlin-jvm:<version>'
+implementation 'me.devnatan:docker-kotlin-jvm:0.8.0'
 ```
 
 ## Basic Usage

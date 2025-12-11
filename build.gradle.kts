@@ -11,7 +11,6 @@ version = property("version")
     .takeUnless { it == "unspecified" }
     ?.filterNot { it == 'v' } ?: nextGitTag()
 
-@Suppress("UnstableApiUsage")
 fun nextGitTag(): String {
     val latestTag = providers.exec {
         commandLine("git", "describe", "--tags", "--abbrev=0")
@@ -108,14 +107,6 @@ kotlin {
     }
 }
 
-tasks {
-    check {
-        dependsOn("installKotlinterPrePushHook")
-    }
-
-    // https://youtrack.jetbrains.com/issue/KT-46466/Kotlin-MPP-publishing-Gradle-7-disables-optimizations-because-of-task-dependencies
-    val signingTasks = withType<Sign>()
-    withType<AbstractPublishToMaven>().configureEach {
-        dependsOn(signingTasks)
-    }
+tasks.check {
+    dependsOn("installKotlinterPrePushHook")
 }
