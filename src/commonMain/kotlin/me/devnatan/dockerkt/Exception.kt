@@ -3,7 +3,9 @@ package me.devnatan.dockerkt
 import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.Serializable
 
-public open class DockerException internal constructor(cause: Throwable?) : RuntimeException(cause)
+public open class DockerException internal constructor(
+    cause: Throwable?,
+) : RuntimeException(cause)
 
 public open class DockerResourceException internal constructor(
     cause: Throwable?,

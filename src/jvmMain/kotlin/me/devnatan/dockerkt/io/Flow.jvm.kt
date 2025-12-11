@@ -30,7 +30,8 @@ internal class InternalYokiFlow internal constructor() : Closeable {
         flow: Flow<T>,
         callback: YokiFlow<T>,
     ) {
-        flow.onStart { callback.onStart() }
+        flow
+            .onStart { callback.onStart() }
             .onCompletion { error -> callback.onComplete(error.also { this@InternalYokiFlow.error = it }) }
             .onEach(callback::onEach)
             .catch { error -> callback.onError(error.also { this@InternalYokiFlow.error = it }) }

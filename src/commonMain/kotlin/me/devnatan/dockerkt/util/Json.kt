@@ -10,10 +10,6 @@ private val json: Json =
         allowStructuredMapKeys = true
     }
 
-public fun toJsonEncodedString(value: Any): String {
-    return json.encodeToString(value)
-}
+public fun toJsonEncodedString(value: Any): String = json.encodeToString(value)
 
-public fun fromJsonEncodedString(value: String): Map<String, String?> {
-    return json.decodeFromString(value)
-}
+public fun fromJsonEncodedString(value: String): Map<String, String?> = json.decodeFromString(value)

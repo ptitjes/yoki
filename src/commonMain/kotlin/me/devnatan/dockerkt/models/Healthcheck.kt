@@ -1,8 +1,11 @@
+@file:OptIn(ExperimentalTime::class)
+
 package me.devnatan.dockerkt.models
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @Serializable
 public data class Healthcheck internal constructor(
@@ -19,6 +22,6 @@ public data class HealthcheckResult internal constructor(
     @SerialName("ExitCode") public val exitCode: Int? = null,
     @SerialName("Output") public val output: String? = null,
 ) {
-    public val startedAt: Instant by lazy { Instant.parse(startedAtString) }
-    public val endedAt: Instant? by lazy { endedAtString?.let(Instant::parse) }
+    public val startedAt: Instant get() = Instant.parse(startedAtString)
+    public val endedAt: Instant? get() = endedAtString?.let(Instant::parse)
 }

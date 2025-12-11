@@ -9,5 +9,7 @@ public data class ContainerWaitResult internal constructor(
     @SerialName("Error") public val error: Error? = null,
 ) {
     @Serializable
-    public data class Error(val message: String)
+    public data class Error(
+        val message: String,
+    )
 }

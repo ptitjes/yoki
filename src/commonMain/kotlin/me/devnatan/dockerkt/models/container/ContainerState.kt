@@ -1,10 +1,13 @@
+@file:OptIn(ExperimentalTime::class)
+
 package me.devnatan.dockerkt.models.container
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import me.devnatan.dockerkt.models.Healthcheck
 import kotlin.jvm.JvmStatic
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @Serializable
 public data class ContainerState internal constructor(
@@ -26,7 +29,9 @@ public data class ContainerState internal constructor(
     public val finishedAt: Instant by lazy { Instant.parse(finishedAtRaw) }
 
     @Serializable
-    public sealed class Status(public val value: String) {
+    public sealed class Status(
+        public val value: String,
+    ) {
         public object Created : Status("created")
 
         public object Running : Status("running")
@@ -41,7 +46,9 @@ public data class ContainerState internal constructor(
 
         public object Dead : Status("dead")
 
-        public class Other(value: String) : Status(value)
+        public class Other(
+            value: String,
+        ) : Status(value)
 
         public companion object {
             public val all: Set<Status> by lazy {
@@ -49,9 +56,7 @@ public data class ContainerState internal constructor(
             }
 
             @JvmStatic
-            public fun parse(value: String): Status {
-                return all.firstOrNull { it.value == value } ?: Other(value)
-            }
+            public fun parse(value: String): Status = all.firstOrNull { it.value == value } ?: Other(value)
         }
     }
 }

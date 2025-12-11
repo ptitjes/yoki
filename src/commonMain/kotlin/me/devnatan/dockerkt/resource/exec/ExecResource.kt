@@ -70,13 +70,12 @@ public class ExecResource internal constructor(
      * @param id Exec instance unique identifier.
      * @throws ExecNotFoundException If exec instance is not found.
      */
-    public suspend fun inspect(id: String): ExecInspectResponse {
-        return requestCatching(
+    public suspend fun inspect(id: String): ExecInspectResponse =
+        requestCatching(
             HttpStatusCode.NotFound to { exception -> ExecNotFoundException(exception, id) },
         ) {
             httpClient.get("$BASE_PATH/$id/json")
         }.body()
-    }
 
     /**
      * Starts a previously set up exec instance.

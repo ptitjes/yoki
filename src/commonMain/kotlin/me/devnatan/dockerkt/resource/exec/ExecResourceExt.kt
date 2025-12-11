@@ -16,9 +16,7 @@ import me.devnatan.dockerkt.resource.container.ContainerNotRunningException
 public suspend inline fun ExecResource.create(
     id: String,
     options: ExecCreateOptions.() -> Unit,
-): String {
-    return create(id, ExecCreateOptions().apply(options))
-}
+): String = create(id, ExecCreateOptions().apply(options))
 
 /**
  * Starts a previously set up exec instance.

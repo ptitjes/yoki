@@ -16,9 +16,7 @@ public data class ExposedPort internal constructor(
     public val port: UShort,
     public val protocol: ExposedPortProtocol = ExposedPortProtocol.TCP,
 ) {
-    override fun toString(): String {
-        return "$port/${protocol.toString().lowercase()}"
-    }
+    override fun toString(): String = "$port/${protocol.toString().lowercase()}"
 
     public companion object {
         public fun fromString(exposedPort: String): ExposedPort {

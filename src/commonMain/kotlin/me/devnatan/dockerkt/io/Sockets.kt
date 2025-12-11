@@ -16,6 +16,4 @@ public const val DEFAULT_DOCKER_UNIX_SOCKET: String = "$UNIX_SOCKET_PREFIX/var/r
 // tcp://localhost:2375
 public const val DEFAULT_DOCKER_HTTP_SOCKET: String = "${HTTP_SOCKET_PREFIX}localhost:$DOCKER_SOCKET_PORT"
 
-internal fun isUnixSocket(input: String): Boolean {
-    return input.startsWith(UNIX_SOCKET_PREFIX)
-}
+internal fun isUnixSocket(input: String): Boolean = input.startsWith(UNIX_SOCKET_PREFIX)

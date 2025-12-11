@@ -10,8 +10,13 @@ import me.devnatan.dockerkt.resource.network.NetworkResource
 import me.devnatan.dockerkt.resource.secret.SecretResource
 import me.devnatan.dockerkt.resource.system.SystemResource
 import me.devnatan.dockerkt.resource.volume.VolumeResource
+import kotlin.coroutines.CoroutineContext
 
-public expect class DockerClient(config: DocketClientConfig) : CoroutineScope {
+public expect class DockerClient(
+    config: DocketClientConfig,
+) : CoroutineScope {
+    override val coroutineContext: CoroutineContext
+
     public val config: DocketClientConfig
     public val json: Json
     public val httpClient: HttpClient

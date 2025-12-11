@@ -31,14 +31,13 @@ public data class Stream internal constructor(
         public val Unknown: Stream = Stream(-1, "UNKNOWN")
 
         @JvmStatic
-        public fun typeOfOrNull(code: Byte): Stream? {
-            return when (code) {
+        public fun typeOfOrNull(code: Byte): Stream? =
+            when (code) {
                 StdIn.code -> StdIn
                 StdOut.code -> StdOut
                 StdErr.code -> StdErr
                 else -> null
             }
-        }
     }
 }
 
@@ -47,14 +46,13 @@ public data class Stream internal constructor(
  *
  * @param name The name of the stream.
  */
-public fun stream(name: String): Stream {
-    return when (name) {
+public fun stream(name: String): Stream =
+    when (name) {
         StdIn.name -> StdIn
         StdOut.name -> StdOut
         StdErr.name -> StdErr
         else -> Unknown
     }
-}
 
 /**
  * @property value The content of the frame.

@@ -1,9 +1,12 @@
+@file:OptIn(ExperimentalTime::class)
+
 package me.devnatan.dockerkt.models.container
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmOverloads
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * Container logs endpoint options.

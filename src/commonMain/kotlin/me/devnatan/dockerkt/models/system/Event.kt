@@ -1,8 +1,11 @@
+@file:OptIn(ExperimentalTime::class)
+
 package me.devnatan.dockerkt.models.system
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @Serializable
 public data class Event internal constructor(

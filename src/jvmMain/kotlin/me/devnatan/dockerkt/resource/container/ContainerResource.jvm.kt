@@ -124,9 +124,10 @@ public actual class ContainerResource(
      * @throws ContainerAlreadyExistsException If a container with the same name already exists.
      */
     public fun createAsync(options: ContainerCreateOptions): CompletableFuture<String> =
-        coroutineScope.async {
-            create(options)
-        }.asCompletableFuture()
+        coroutineScope
+            .async {
+                create(options)
+            }.asCompletableFuture()
 
     /**
      * Removes a container.
@@ -232,9 +233,10 @@ public actual class ContainerResource(
         id: String,
         detachKeys: String? = null,
     ): CompletableFuture<Unit> =
-        coroutineScope.async {
-            start(id, detachKeys)
-        }.asCompletableFuture()
+        coroutineScope
+            .async {
+                start(id, detachKeys)
+            }.asCompletableFuture()
 
     /**
      * Stops a container.
@@ -262,9 +264,10 @@ public actual class ContainerResource(
      * @param container The container id to stop.
      */
     public fun stopAsync(container: String): CompletableFuture<Unit> =
-        coroutineScope.async {
-            stop(container, timeout = null)
-        }.asCompletableFuture()
+        coroutineScope
+            .async {
+                stop(container, timeout = null)
+            }.asCompletableFuture()
 
     /**
      * Stops a container.
@@ -276,9 +279,10 @@ public actual class ContainerResource(
         container: String,
         timeoutInSeconds: Int,
     ): CompletableFuture<Unit> =
-        coroutineScope.async {
-            stop(container, timeoutInSeconds.toDuration(DurationUnit.SECONDS))
-        }.asCompletableFuture()
+        coroutineScope
+            .async {
+                stop(container, timeoutInSeconds.toDuration(DurationUnit.SECONDS))
+            }.asCompletableFuture()
 
     /**
      * Restarts a container.
@@ -305,9 +309,10 @@ public actual class ContainerResource(
      * @param container The container id to restart.
      */
     public fun restartAsync(container: String): CompletableFuture<Unit> =
-        coroutineScope.async {
-            restart(container, timeout = null)
-        }.asCompletableFuture()
+        coroutineScope
+            .async {
+                restart(container, timeout = null)
+            }.asCompletableFuture()
 
     /**
      * Restarts a container.
@@ -319,9 +324,10 @@ public actual class ContainerResource(
         container: String,
         timeoutInSeconds: Int,
     ): CompletableFuture<Unit> =
-        coroutineScope.async {
-            restart(container, timeoutInSeconds.toDuration(DurationUnit.SECONDS))
-        }.asCompletableFuture()
+        coroutineScope
+            .async {
+                restart(container, timeoutInSeconds.toDuration(DurationUnit.SECONDS))
+            }.asCompletableFuture()
 
     /**
      * Kills a container.
@@ -354,9 +360,10 @@ public actual class ContainerResource(
         container: String,
         signal: String? = null,
     ): CompletableFuture<Unit> =
-        coroutineScope.async {
-            kill(container, signal)
-        }.asCompletableFuture()
+        coroutineScope
+            .async {
+                kill(container, signal)
+            }.asCompletableFuture()
 
     /**
      * Renames a container.
@@ -388,9 +395,10 @@ public actual class ContainerResource(
         container: String,
         newName: String,
     ): CompletableFuture<Unit> =
-        coroutineScope.async {
-            rename(container, newName)
-        }.asCompletableFuture()
+        coroutineScope
+            .async {
+                rename(container, newName)
+            }.asCompletableFuture()
 
     /**
      * Pauses a container.
@@ -479,20 +487,21 @@ public actual class ContainerResource(
     @JvmSynthetic
     public actual fun attach(container: String): Flow<Frame> =
         flow {
-            httpClient.preparePost("$CONTAINERS/$container/attach") {
-                parameter("stream", "true")
-                parameter("stdin", "true")
-                parameter("stdout", "true")
-                parameter("stderr", "true")
-            }.execute { response ->
-                val channel = response.body<ByteReadChannel>()
-                while (!channel.isClosedForRead) {
-                    val line = channel.readUTF8Line() ?: break
+            httpClient
+                .preparePost("$CONTAINERS/$container/attach") {
+                    parameter("stream", "true")
+                    parameter("stdin", "true")
+                    parameter("stdout", "true")
+                    parameter("stderr", "true")
+                }.execute { response ->
+                    val channel = response.body<ByteReadChannel>()
+                    while (!channel.isClosedForRead) {
+                        val line = channel.readUTF8Line() ?: break
 
-                    // TODO handle stream type
-                    emit(Frame(line, line.length, Stream.StdOut))
+                        // TODO handle stream type
+                        emit(Frame(line, line.length, Stream.StdOut))
+                    }
                 }
-            }
         }
 
     @JvmSynthetic
@@ -500,9 +509,10 @@ public actual class ContainerResource(
         container: String,
         condition: String?,
     ): ContainerWaitResult =
-        httpClient.post("$CONTAINERS/$container/wait") {
-            parameter("condition", condition)
-        }.body()
+        httpClient
+            .post("$CONTAINERS/$container/wait") {
+                parameter("condition", condition)
+            }.body()
 
     @JvmOverloads
     public fun waitAsync(
@@ -512,9 +522,10 @@ public actual class ContainerResource(
 
     @JvmSynthetic
     public actual suspend fun prune(filters: ContainerPruneFilters): ContainerPruneResult =
-        httpClient.post("$CONTAINERS/prune") {
-            parameter("filters", json.encodeToString(filters))
-        }.body()
+        httpClient
+            .post("$CONTAINERS/prune") {
+                parameter("filters", json.encodeToString(filters))
+            }.body()
 
     @JvmOverloads
     public fun pruneAsync(filters: ContainerPruneFilters = ContainerPruneFilters()): CompletableFuture<ContainerPruneResult> =

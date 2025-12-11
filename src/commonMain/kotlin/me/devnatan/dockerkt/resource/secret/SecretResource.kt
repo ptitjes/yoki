@@ -33,24 +33,21 @@ public class SecretResource internal constructor(
      * Lists all secrets.
      * @param filters Filters to process on the secrets list.
      */
-    public suspend fun list(filters: SecretListFilters? = null): List<Secret> {
-        return requestCatching(
+    public suspend fun list(filters: SecretListFilters? = null): List<Secret> =
+        requestCatching(
             HttpStatusCode.ServiceUnavailable to ::NodeNotPartOfSwarmException,
         ) {
             httpClient.get(BASE_PATH) {
                 parameter("filters", filters?.let(json::encodeToString))
             }
         }.body()
-    }
 
     /**
      * Inspects a secret.
      *
      * @param id The id of the secret.
      */
-    public suspend fun inspect(id: String): Secret {
-        return httpClient.get("$BASE_PATH/$id").body()
-    }
+    public suspend fun inspect(id: String): Secret = httpClient.get("$BASE_PATH/$id").body()
 
     /**
      * Deletes a secret.
@@ -66,8 +63,8 @@ public class SecretResource internal constructor(
      *
      * @param options The secret spec.
      */
-    public suspend fun create(options: SecretSpec): String {
-        return requestCatching(
+    public suspend fun create(options: SecretSpec): String =
+        requestCatching(
             HttpStatusCode.Conflict to { SecretNameConflictException(it, options.name) },
             HttpStatusCode.ServiceUnavailable to ::NodeNotPartOfSwarmException,
         ) {
@@ -75,7 +72,6 @@ public class SecretResource internal constructor(
                 setBody(options)
             }
         }.body<IdOnlyResponse>().id
-    }
 
     /**
      * Updates an existing secret on the Docker swarm.
@@ -106,21 +102,16 @@ public class SecretResource internal constructor(
  *
  * @param filters Filters to process on the secrets list.
  */
-public suspend inline fun SecretResource.list(filters: SecretListFilters.() -> Unit): List<Secret> {
-    return list(SecretListFilters().apply(filters))
-}
+public suspend inline fun SecretResource.list(filters: SecretListFilters.() -> Unit): List<Secret> =
+    list(SecretListFilters().apply(filters))
 
-public suspend inline fun SecretResource.create(options: SecretSpec.() -> Unit): String {
-    return create(SecretSpec().apply(options))
-}
+public suspend inline fun SecretResource.create(options: SecretSpec.() -> Unit): String = create(SecretSpec().apply(options))
 
 public suspend inline fun SecretResource.update(
     id: String,
     version: Long,
     options: SecretSpec.() -> Unit,
-) {
-    return update(id, version, SecretSpec().apply(options))
-}
+) = update(id, version, SecretSpec().apply(options))
 
 /**
  * Sets the secret list filters to the given label pair.

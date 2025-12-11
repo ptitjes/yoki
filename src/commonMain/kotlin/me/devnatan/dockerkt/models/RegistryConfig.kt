@@ -9,4 +9,7 @@ import kotlinx.serialization.Serializable
  * @property password The password for authentication with the Docker registry.
  */
 @Serializable
-public data class RegistryConfig(val username: String, val password: String)
+public data class RegistryConfig(
+    val username: String,
+    val password: String,
+)

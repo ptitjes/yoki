@@ -1,9 +1,9 @@
 package me.devnatan.dockerkt.models.container
 
-import kotlinx.datetime.Instant
-import kotlinx.datetime.toInstant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @Serializable
 public data class ContainerArchiveInfo(
@@ -14,5 +14,6 @@ public data class ContainerArchiveInfo(
     val linkTarget: String = "",
 )
 
+@OptIn(ExperimentalTime::class)
 public val ContainerArchiveInfo.modifiedAt: Instant
-    get() = modifiedAtRaw.toInstant()
+    get() = Instant.parse(modifiedAtRaw)

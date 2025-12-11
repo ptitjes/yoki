@@ -1,8 +1,11 @@
+@file:OptIn(ExperimentalTime::class)
+
 package me.devnatan.dockerkt.models.secret
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * Secrets are sensitive data that can be used by Docker services.

@@ -15,9 +15,8 @@ import me.devnatan.dockerkt.resource.image.ImageNotFoundException
  *
  * @param options Options to customize the listing result.
  */
-public suspend inline fun ContainerResource.list(options: ContainerListOptions.() -> Unit): List<ContainerSummary> {
-    return list(ContainerListOptions().apply(options))
-}
+public suspend inline fun ContainerResource.list(options: ContainerListOptions.() -> Unit): List<ContainerSummary> =
+    list(ContainerListOptions().apply(options))
 
 /**
  * Creates a new container.
@@ -26,9 +25,8 @@ public suspend inline fun ContainerResource.list(options: ContainerListOptions.(
  * @throws ImageNotFoundException If the image specified does not exist or isn't pulled.
  * @throws ContainerAlreadyExistsException If a container with the same name already exists.
  */
-public suspend inline fun ContainerResource.create(options: ContainerCreateOptions.() -> Unit): String {
-    return create(ContainerCreateOptions().apply(options))
-}
+public suspend inline fun ContainerResource.create(options: ContainerCreateOptions.() -> Unit): String =
+    create(ContainerCreateOptions().apply(options))
 
 /**
  * Removes a container.
@@ -41,13 +39,10 @@ public suspend inline fun ContainerResource.create(options: ContainerCreateOptio
 public suspend inline fun ContainerResource.remove(
     container: String,
     options: ContainerRemoveOptions.() -> Unit,
-) {
-    return remove(container, ContainerRemoveOptions().apply(options))
-}
+): Unit = remove(container, ContainerRemoveOptions().apply(options))
 
-public suspend inline fun ContainerResource.prune(block: ContainerPruneFilters.() -> Unit): ContainerPruneResult {
-    return prune(ContainerPruneFilters().apply(block))
-}
+public suspend inline fun ContainerResource.prune(block: ContainerPruneFilters.() -> Unit): ContainerPruneResult =
+    prune(ContainerPruneFilters().apply(block))
 
 /**
  * Resizes the TTY for a container.

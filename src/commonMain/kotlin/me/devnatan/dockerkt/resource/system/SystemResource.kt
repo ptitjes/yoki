@@ -40,11 +40,10 @@ public class SystemResource internal constructor(
      *
      * @throws me.devnatan.dockerkt.DockerResourceException If an error occurs in the request.
      */
-    public suspend fun version(): SystemVersion {
-        return requestCatching {
+    public suspend fun version(): SystemVersion =
+        requestCatching {
             httpClient.get("/version")
         }.body()
-    }
 
     /**
      * Pings the server completing successfully if the server is accessible.
@@ -52,8 +51,8 @@ public class SystemResource internal constructor(
      * @param head Should use `HEAD` instead of `GET` HTTP method to ping.
      */
     @JvmOverloads
-    public suspend fun ping(head: Boolean = true): SystemPingData {
-        return requestCatching {
+    public suspend fun ping(head: Boolean = true): SystemPingData =
+        requestCatching {
             if (head) {
                 httpClient.head(PING_ENDPOINT)
             } else {
@@ -66,7 +65,6 @@ public class SystemResource internal constructor(
                 experimental = headers["Docker-Experimental"]?.toBooleanStrict() ?: false,
             )
         }
-    }
 
     /**
      * Monitors events in real-time from the server.
@@ -76,18 +74,19 @@ public class SystemResource internal constructor(
     public fun events(options: MonitorEventsOptions = MonitorEventsOptions()): Flow<Event> =
         flow {
             requestCatching {
-                httpClient.prepareGet("/events") {
-                    parameter("until", options.until)
-                    parameter("since", options.since)
-                    parameter("filters", json.encodeToString(options.filters))
-                }.execute { response ->
-                    val channel = response.body<ByteReadChannel>()
-                    while (true) {
-                        val raw = channel.readUTF8Line() ?: break
-                        val decoded = json.decodeFromString<Event>(raw)
-                        emit(decoded)
+                httpClient
+                    .prepareGet("/events") {
+                        parameter("until", options.until)
+                        parameter("since", options.since)
+                        parameter("filters", json.encodeToString(options.filters))
+                    }.execute { response ->
+                        val channel = response.body<ByteReadChannel>()
+                        while (true) {
+                            val raw = channel.readUTF8Line() ?: break
+                            val decoded = json.decodeFromString<Event>(raw)
+                            emit(decoded)
+                        }
                     }
-                }
             }
         }
 }

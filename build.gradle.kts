@@ -58,7 +58,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(libs.ktx.coroutines.core)
-                implementation(libs.ktx.datetime)
                 implementation(libs.bundles.ktor)
                 implementation(libs.bundles.ktx)
                 implementation(libs.kotlinx.io.core)

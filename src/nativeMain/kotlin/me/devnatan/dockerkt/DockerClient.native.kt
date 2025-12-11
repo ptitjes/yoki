@@ -15,8 +15,11 @@ import me.devnatan.dockerkt.resource.system.SystemResource
 import me.devnatan.dockerkt.resource.volume.VolumeResource
 import kotlin.coroutines.CoroutineContext
 
-public actual class DockerClient public actual constructor(public actual val config: DocketClientConfig) : CoroutineScope, Closeable {
-    override val coroutineContext: CoroutineContext = SupervisorJob()
+public actual class DockerClient public actual constructor(
+    public actual val config: DocketClientConfig,
+) : CoroutineScope,
+    Closeable {
+    actual override val coroutineContext: CoroutineContext = SupervisorJob()
 
     public actual val json: Json = Json { ignoreUnknownKeys = true }
     public actual val httpClient: HttpClient = createHttpClient(this)

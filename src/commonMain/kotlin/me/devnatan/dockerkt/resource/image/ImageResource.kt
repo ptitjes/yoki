@@ -31,20 +31,19 @@ public class ImageResource internal constructor(
         private val TAR_CONTENT_TYPE = ContentType.parse("application/x-tar")
     }
 
-    public suspend fun list(): List<ImageSummary> {
-        return httpClient.get("$BASE_PATH/json").body()
-    }
+    public suspend fun list(): List<ImageSummary> = httpClient.get("$BASE_PATH/json").body()
 
     public fun pull(image: String): Flow<ImagePull> =
         flow {
-            httpClient.preparePost("$BASE_PATH/create") {
-                parameter("fromImage", image)
-            }.execute { response ->
-                val channel = response.body<ByteReadChannel>()
-                while (true) {
-                    emit(json.decodeFromString(channel.readUTF8Line() ?: break))
+            httpClient
+                .preparePost("$BASE_PATH/create") {
+                    parameter("fromImage", image)
+                }.execute { response ->
+                    val channel = response.body<ByteReadChannel>()
+                    while (true) {
+                        emit(json.decodeFromString(channel.readUTF8Line() ?: break))
+                    }
                 }
-            }
         }
 
     public suspend fun remove(

@@ -36,11 +36,11 @@ public class NetworkResource internal constructor(
      * @param filters Filters to process on the networks list.
      * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkList">NetworkList</a>
      */
-    public suspend fun list(filters: NetworkListFilters? = null): List<Network> {
-        return httpClient.get(BASE_PATH) {
-            parameter("filters", filters?.let(json::encodeToString))
-        }.body()
-    }
+    public suspend fun list(filters: NetworkListFilters? = null): List<Network> =
+        httpClient
+            .get(BASE_PATH) {
+                parameter("filters", filters?.let(json::encodeToString))
+            }.body()
 
     /**
      * Inspects a network.
@@ -52,8 +52,8 @@ public class NetworkResource internal constructor(
     public suspend fun inspect(
         id: String,
         options: NetworkInspectOptions? = null,
-    ): Network {
-        return requestCatching(
+    ): Network =
+        requestCatching(
             HttpStatusCode.NotFound to { NetworkNotFoundException(it, id) },
         ) {
             httpClient.get("$BASE_PATH/$id") {
@@ -61,7 +61,6 @@ public class NetworkResource internal constructor(
                 parameter("scope", options?.scope)
             }
         }.body()
-    }
 
     /**
      * Removes a network.
@@ -82,9 +81,10 @@ public class NetworkResource internal constructor(
     public suspend fun create(config: NetworkCreateOptions): Network {
         checkNotNull(config.name) { "Network name is required and cannot be null" }
 
-        return httpClient.post("$BASE_PATH/create") {
-            setBody(config)
-        }.body()
+        return httpClient
+            .post("$BASE_PATH/create") {
+                setBody(config)
+            }.body()
     }
 
     /**
@@ -139,9 +139,8 @@ public class NetworkResource internal constructor(
  * @param config The network configuration.
  * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkCreate">NetworkCreate</a>
  */
-public suspend inline fun NetworkResource.create(config: NetworkCreateOptions.() -> Unit): Network {
-    return create(NetworkCreateOptions().apply(config))
-}
+public suspend inline fun NetworkResource.create(config: NetworkCreateOptions.() -> Unit): Network =
+    create(NetworkCreateOptions().apply(config))
 
 /**
  * Returns a list of networks.
@@ -149,9 +148,8 @@ public suspend inline fun NetworkResource.create(config: NetworkCreateOptions.()
  * @param filters Filters to process on the networks list.
  * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkList">NetworkList</a>
  */
-public suspend inline fun NetworkResource.list(filters: NetworkListFilters.() -> Unit): List<Network> {
-    return list(NetworkListFilters().apply(filters))
-}
+public suspend inline fun NetworkResource.list(filters: NetworkListFilters.() -> Unit): List<Network> =
+    list(NetworkListFilters().apply(filters))
 
 /**
  * Inspects a network.
@@ -163,9 +161,7 @@ public suspend inline fun NetworkResource.list(filters: NetworkListFilters.() ->
 public suspend inline fun NetworkResource.inspect(
     id: String,
     options: NetworkInspectOptions.() -> Unit,
-): Network {
-    return inspect(id, NetworkInspectOptions().apply(options))
-}
+): Network = inspect(id, NetworkInspectOptions().apply(options))
 
 /**
  * Deletes all unused networks.

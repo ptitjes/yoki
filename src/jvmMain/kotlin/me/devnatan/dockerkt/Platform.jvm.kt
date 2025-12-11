@@ -1,8 +1,6 @@
 package me.devnatan.dockerkt
 
-internal actual fun env(key: String): String? {
-    return System.getenv(key)
-}
+internal actual fun env(key: String): String? = System.getenv(key)
 
 internal actual fun isUnixPlatform(): Boolean {
     val os = System.getProperty("os.name").lowercase()

@@ -75,8 +75,10 @@ internal object CompressArchiveUtil {
                 setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_POSIX)
             }
 
-    class TarDirWalker(private val basePath: Path, private val tarArchiveOutputStream: TarArchiveOutputStream) :
-        SimpleFileVisitor<Path>() {
+    class TarDirWalker(
+        private val basePath: Path,
+        private val tarArchiveOutputStream: TarArchiveOutputStream,
+    ) : SimpleFileVisitor<Path>() {
         @Throws(IOException::class)
         override fun preVisitDirectory(
             dir: Path,

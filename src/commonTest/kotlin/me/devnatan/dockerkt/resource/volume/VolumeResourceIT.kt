@@ -28,10 +28,20 @@ class VolumeResourceIT : ResourceIT() {
     fun `remove volume`() =
         runTest {
             val volumes = testClient.volumes.create { name = VOLUME_NAME }
-            assertTrue(testClient.volumes.list().volumes.any { it.name == volumes.name })
+            assertTrue(
+                testClient.volumes
+                    .list()
+                    .volumes
+                    .any { it.name == volumes.name },
+            )
 
             testClient.volumes.remove(volumes.name)
-            assertTrue(testClient.volumes.list().volumes.none { it.name == volumes.name })
+            assertTrue(
+                testClient.volumes
+                    .list()
+                    .volumes
+                    .none { it.name == volumes.name },
+            )
         }
 
     @Test
@@ -44,15 +54,28 @@ class VolumeResourceIT : ResourceIT() {
     @Test
     fun `prune volume`() =
         runTest {
-            val oldCount = testClient.volumes.list().volumes.size
+            val oldCount =
+                testClient.volumes
+                    .list()
+                    .volumes.size
             val newCount = 5
             repeat(newCount) {
                 testClient.volumes.create()
             }
 
-            assertEquals(testClient.volumes.list().volumes.size, oldCount + newCount)
+            assertEquals(
+                testClient.volumes
+                    .list()
+                    .volumes.size,
+                oldCount + newCount,
+            )
 
             testClient.volumes.prune()
-            assertEquals(testClient.volumes.list().volumes.size, oldCount)
+            assertEquals(
+                testClient.volumes
+                    .list()
+                    .volumes.size,
+                oldCount,
+            )
         }
 }

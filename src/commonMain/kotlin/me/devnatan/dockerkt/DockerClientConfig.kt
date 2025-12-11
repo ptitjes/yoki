@@ -136,9 +136,7 @@ public class DockerClientConfigBuilder {
     /**
      * Builds this class to a [DocketClientConfig].
      */
-    public fun build(): DocketClientConfig {
-        return DocketClientConfig(socketPath, apiVersion, debugHttpCalls)
-    }
+    public fun build(): DocketClientConfig = DocketClientConfig(socketPath, apiVersion, debugHttpCalls)
 
     /**
      * Returns the value for the given environment variable [key] or [fallback] if it isn't set.
@@ -151,26 +149,24 @@ public class DockerClientConfigBuilder {
         key: String,
         fallback: String,
         prefix: String?,
-    ): String {
-        return env(key)?.ifBlank { null }?.let { path ->
+    ): String =
+        env(key)?.ifBlank { null }?.let { path ->
             if (prefix == null || path.startsWith(prefix)) {
                 path
             } else {
                 null
             }
         } ?: fallback
-    }
 
     /**
      * Selects a Docker socket path based on current OS.
      */
-    private fun selectDockerSocketPath(): String {
-        return if (isUnixPlatform()) {
+    private fun selectDockerSocketPath(): String =
+        if (isUnixPlatform()) {
             DEFAULT_DOCKER_UNIX_SOCKET
         } else {
             DEFAULT_DOCKER_HTTP_SOCKET
         }
-    }
 
     public companion object {
         /**
