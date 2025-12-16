@@ -18,7 +18,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -27,17 +27,15 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
-          server-id: github
-          settings-path: ${{ github.workspace }}
-
-      - name: Setup Docker
-        uses: docker-practice/actions-setup-docker@master
-
-      - name: Prune Docker System
-        run: docker system prune -a -f
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Setup Docker
+        uses: docker/setup-docker-action@v4.6.0
+
+      - name: Prune Docker System
+        run: docker system prune -a -f
 
       - name: Run Tests
         run: ./gradlew allTests
