@@ -10,12 +10,6 @@ dependencies {
 }
 ```
 
-For JVM users, use the Docker client JVM artifact
-
-```groovy
-implementation 'me.devnatan:docker-kotlin-jvm:0.8.0'
-```
-
 ## Basic Usage
 
 Use `DockerKotlin.create()` to create a new Docker client instance with the default settings, default settings are based on the 
