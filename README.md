@@ -6,7 +6,7 @@ docker-kotlin allows you to interact with the Docker Engine Remote API.
 
 ```kotlin
 dependencies {
-    implementation("me.devnatan:docker-kotlin:0.8.0")
+    implementation("me.devnatan:docker-kotlin:0.10.0")
 }
 ```
 
