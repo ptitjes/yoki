@@ -2,19 +2,20 @@ package me.devnatan.dockerkt.resource.container
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.request.accept
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
-import io.ktor.client.request.head
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.preparePost
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import io.ktor.util.cio.toByteReadChannel
+import io.ktor.util.decodeBase64Bytes
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.CancellationException
 import io.ktor.utils.io.availableForRead
@@ -27,20 +28,21 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.future.asCompletableFuture
-import kotlinx.io.RawSource
-import kotlinx.io.asInputStream
-import kotlinx.io.asSource
-import kotlinx.io.buffered
+import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
 import me.devnatan.dockerkt.DockerResponseException
-import me.devnatan.dockerkt.io.readTarFile
+import me.devnatan.dockerkt.io.FileSystemUtils
+import me.devnatan.dockerkt.io.TarEntry
+import me.devnatan.dockerkt.io.TarOperations
+import me.devnatan.dockerkt.io.TarUtils
 import me.devnatan.dockerkt.io.requestCatching
-import me.devnatan.dockerkt.io.writeTarFile
 import me.devnatan.dockerkt.models.Frame
 import me.devnatan.dockerkt.models.ResizeTTYOptions
 import me.devnatan.dockerkt.models.Stream
 import me.devnatan.dockerkt.models.container.Container
 import me.devnatan.dockerkt.models.container.ContainerArchiveInfo
+import me.devnatan.dockerkt.models.container.ContainerCopyOptions
+import me.devnatan.dockerkt.models.container.ContainerCopyResult
 import me.devnatan.dockerkt.models.container.ContainerCreateOptions
 import me.devnatan.dockerkt.models.container.ContainerCreateResult
 import me.devnatan.dockerkt.models.container.ContainerListOptions
@@ -52,10 +54,7 @@ import me.devnatan.dockerkt.models.container.ContainerSummary
 import me.devnatan.dockerkt.models.container.ContainerWaitResult
 import me.devnatan.dockerkt.resource.ResourcePaths.CONTAINERS
 import me.devnatan.dockerkt.resource.image.ImageNotFoundException
-import java.io.InputStream
 import java.util.concurrent.CompletableFuture
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -536,69 +535,116 @@ public actual class ContainerResource(
     public fun pruneAsync(filters: ContainerPruneFilters = ContainerPruneFilters()): CompletableFuture<ContainerPruneResult> =
         coroutineScope.async { prune(filters) }.asCompletableFuture()
 
-    /**
-     * Retrieves information about files of a container file system.
-     *
-     * @param container The container id.
-     * @param path The path to the file or directory inside the container file system.
-     */
-    @OptIn(ExperimentalEncodingApi::class)
-    public actual suspend fun archive(
+    public actual suspend fun copyFrom(
         container: String,
-        path: String,
-    ): ContainerArchiveInfo =
-        requestCatching {
+        sourcePath: String,
+    ): ContainerCopyResult =
+        requestCatching(
+            HttpStatusCode.NotFound to { exception ->
+                if (exception.message?.contains("file") == true) {
+                    ArchiveNotFoundException(exception, container, sourcePath)
+                } else {
+                    ContainerNotFoundException(exception, container)
+                }
+            },
+        ) {
             val response =
-                httpClient.head("$CONTAINERS/$container/archive") {
-                    parameter("path", path)
+                httpClient.get("$CONTAINERS/$container/archive") {
+                    parameter("path", sourcePath)
                 }
 
-            val pathStat = response.headers["X-Docker-Container-Path-Stat"] ?: error("Missing path stat header")
-            val decoded = Base64.decode(pathStat).decodeToString()
-            return json.decodeFromString(decoded)
+            val archiveData = response.readRawBytes()
+
+            val statHeader = response.headers["X-Docker-Container-Path-Stat"]
+            val stat =
+                statHeader?.let { header ->
+                    val decoded = header.decodeBase64Bytes()
+                    json.decodeFromString<ContainerArchiveInfo>(decoded.decodeToString())
+                }
+
+            ContainerCopyResult(archiveData, stat)
         }
 
-    /**
-     * Downloads files from a container file system.
-     *
-     * @param container The container id.
-     * @param remotePath The path to the file or directory inside the container file system.
-     */
-    public actual suspend fun downloadArchive(
+    public actual suspend fun copyTo(
         container: String,
-        remotePath: String,
-    ): RawSource {
-        val contents =
-            requestCatching {
-                httpClient.get("$CONTAINERS/$container/archive") {
-                    accept(ContentType.parse("application/x-tar"))
-                    parameter("path", remotePath)
-                }
-            }.body<InputStream>()
-        return readTarFile(contents.asSource())
-    }
-
-    /**
-     * Uploads files into a container file system.
-     *
-     * @param container The container id.
-     * @param inputPath Path to the file that will be uploaded.
-     * @param remotePath Path to the file or directory inside the container file system.
-     */
-    public actual suspend fun uploadArchive(
-        container: String,
-        inputPath: String,
-        remotePath: String,
+        destinationPath: String,
+        tarArchive: ByteArray,
+        options: ContainerCopyOptions,
     ): Unit =
-        requestCatching {
-            val archive = writeTarFile(inputPath)
-
+        requestCatching(
+            HttpStatusCode.NotFound to { exception -> ContainerNotFoundException(exception, container) },
+            HttpStatusCode.BadRequest to { exception ->
+                IllegalArgumentException("Invalid destination path: $destinationPath", exception)
+            },
+        ) {
             httpClient.put("$CONTAINERS/$container/archive") {
-                parameter("path", remotePath.ifEmpty { FileSystemRoot })
-                parameter("noOverwriteDirNonDir", false)
-                setBody(archive.buffered().asInputStream().toByteReadChannel())
+                parameter("path", destinationPath)
+                parameter("noOverwriteDirNonDir", options.noOverwriteDirNonDir.toString())
+                parameter("copyUIDGID", options.copyUIDGID.toString())
+
+                setBody(tarArchive)
+                contentType(ContentType.Application.OctetStream)
             }
         }
+
+    public actual suspend fun copyFileFrom(
+        container: String,
+        sourcePath: String,
+        destinationPath: String,
+    ) {
+        val result = copyFrom(container, sourcePath)
+        TarOperations.extractTar(result.archiveData, Path(destinationPath))
+    }
+
+    public actual suspend fun copyFileTo(
+        container: String,
+        sourcePath: String,
+        destinationPath: String,
+        options: ContainerCopyOptions,
+    ) {
+        val path = Path(sourcePath)
+        if (!FileSystemUtils.exists(path)) {
+            throw IllegalArgumentException("Source file not found: $sourcePath")
+        }
+
+        if (FileSystemUtils.isDirectory(path)) {
+            throw IllegalArgumentException("Source is a directory, use copyDirectoryTo instead: $sourcePath")
+        }
+
+        val tarArchive = TarOperations.createTarFromFile(path)
+        copyTo(container, destinationPath, tarArchive, options)
+    }
+
+    public actual suspend fun copyDirectoryFrom(
+        container: String,
+        sourcePath: String,
+        destinationPath: String,
+    ) {
+        val result = copyFrom(container, sourcePath)
+        TarOperations.extractTar(result.archiveData, Path(destinationPath))
+    }
+
+    public actual suspend fun copyDirectoryTo(
+        container: String,
+        sourcePath: String,
+        destinationPath: String,
+        options: ContainerCopyOptions,
+    ) {
+        val path = Path(sourcePath)
+        if (!FileSystemUtils.exists(path) || !FileSystemUtils.isDirectory(path)) {
+            throw IllegalArgumentException("Source directory not found: $sourcePath")
+        }
+
+        // Create tar with directory contents only (not including the root directory name)
+        val tarArchive = createTarFromDirectoryContents(path)
+        copyTo(container, destinationPath, tarArchive, options)
+    }
+
+    private fun createTarFromDirectoryContents(dirPath: Path): ByteArray {
+        val entries = mutableListOf<TarEntry>()
+        TarOperations.collectDirectoryContents(dirPath, "", entries)
+        return TarUtils.createTarArchive(entries)
+    }
 
     public actual fun logs(
         container: String,
