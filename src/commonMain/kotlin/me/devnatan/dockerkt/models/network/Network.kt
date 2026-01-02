@@ -2,6 +2,7 @@ package me.devnatan.dockerkt.models.network
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable
 public data class Network(
@@ -9,13 +10,16 @@ public data class Network(
     @SerialName("Name") val name: String? = null,
     @SerialName("Scope") val scope: String = NetworkLocalScope,
     @SerialName("Driver") val driver: String = NetworkBridgeDriver,
-    @SerialName("EnableIPV6") val enableIPv6: Boolean = false,
+    @SerialName("EnableIPv4") val enableIPv4: Boolean = false,
+    @SerialName("EnableIPv6") val enableIPv6: Boolean = false,
     @SerialName("Internal") val isInternal: Boolean = false,
     @SerialName("Attachable") val isAttachable: Boolean = false,
     @SerialName("Ingress") val ingress: Boolean = false,
     @SerialName("Containers") val containers: Map<String, NetworkContainer> = emptyMap(),
     @SerialName("Options") val options: Map<String, String> = emptyMap(),
     @SerialName("Labels") val labels: Map<String, String> = emptyMap(),
+    @SerialName("Created") val created: Instant,
+    @SerialName("IPAM") val ipam: IPAM? = null,
 )
 
 public const val NetworkCustomType: String = "custom"

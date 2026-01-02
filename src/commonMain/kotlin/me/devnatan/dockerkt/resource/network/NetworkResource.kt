@@ -10,12 +10,13 @@ import io.ktor.client.request.setBody
 import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.json.Json
 import me.devnatan.dockerkt.io.requestCatching
+import me.devnatan.dockerkt.models.IdOnlyResponse
 import me.devnatan.dockerkt.models.network.Network
 import me.devnatan.dockerkt.models.network.NetworkCreateOptions
 import me.devnatan.dockerkt.models.network.NetworkInspectOptions
 import me.devnatan.dockerkt.models.network.NetworkListFilters
 import me.devnatan.dockerkt.models.network.NetworkPruneOptions
-import me.devnatan.dockerkt.resource.NetworkNotFoundException
+import me.devnatan.dockerkt.models.network.NetworkPruneResult
 
 private const val BasePath = "/networks"
 
@@ -42,18 +43,18 @@ public class NetworkResource internal constructor(
     /**
      * Inspects a network.
      *
-     * @param id The network id or name.
+     * @param network The network id or name.
      * @param options The network inspection options.
      * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkInspect">NetworkInspect</a>
      */
     public suspend fun inspect(
-        id: String,
+        network: String,
         options: NetworkInspectOptions? = null,
     ): Network =
         requestCatching(
-            HttpStatusCode.NotFound to { NetworkNotFoundException(it, id) },
+            HttpStatusCode.NotFound to { NetworkNotFoundException(it, network) },
         ) {
-            httpClient.get("$BasePath/$id") {
+            httpClient.get("$BasePath/$network") {
                 parameter("verbose", options?.verbose)
                 parameter("scope", options?.scope)
             }
@@ -62,11 +63,11 @@ public class NetworkResource internal constructor(
     /**
      * Removes a network.
      *
-     * @param id The network id or name.
+     * @param network The network id or name.
      * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkDelete">NetworkDelete</a>
      */
-    public suspend fun remove(id: String) {
-        httpClient.delete("$BasePath/$id")
+    public suspend fun remove(network: String) {
+        httpClient.delete("$BasePath/$network")
     }
 
     /**
@@ -75,40 +76,53 @@ public class NetworkResource internal constructor(
      * @param config The network configuration.
      * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkCreate">NetworkCreate</a>
      */
-    public suspend fun create(config: NetworkCreateOptions): Network {
+    public suspend fun create(config: NetworkCreateOptions): String {
         checkNotNull(config.name) { "Network name is required and cannot be null" }
 
-        return httpClient
-            .post("$BasePath/create") {
-                setBody(config)
-            }.body()
+        return requestCatching(
+            HttpStatusCode.Conflict to { exception ->
+                NetworkConflictException(exception, config.name!!)
+            },
+            HttpStatusCode.Forbidden to { exception ->
+                NetworkForbiddenException(exception, config.name!!)
+            },
+        ) {
+            httpClient
+                .post("$BasePath/create") {
+                    setBody(config)
+                }.body<IdOnlyResponse>()
+                .id
+        }
     }
 
     /**
      * Deletes all unused networks.
      *
-     * @param options The network prune options.
+     * Networks are considered unused if they have no containers attached to them.
      *
-     * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkPrune">NetworkPrune</a>
+     * @param options The network prune options. Use [prune] extension function for DSL syntax.
+     * @return Information about the pruned networks.
      */
-    public suspend fun prune(options: NetworkPruneOptions? = null) {
-        httpClient.post("$BasePath/prune") {
-            parameter("filters", options)
-        }
-    }
+    public suspend fun prune(options: NetworkPruneOptions? = null): NetworkPruneResult =
+        httpClient
+            .post("$BasePath/prune") {
+                options?.let {
+                    parameter("filters", json.encodeToString(it))
+                }
+            }.body()
 
     /**
      * Connects a container to a network.
      *
-     * @param id The network id or name.
+     * @param network The network id or name.
      * @param container The id or name of the container to connect to the network.
      * @see <a href="https://docs.docker.com/engine/api/v1.41/#operation/NetworkConnect">NetworkConnect</a>
      */
     public suspend fun connectContainer(
-        id: String,
+        network: String,
         container: String,
     ) {
-        httpClient.post("$BasePath/$id/connect") {
+        httpClient.post("$BasePath/$network/connect") {
             setBody(mapOf("Container" to container))
         }
     }
@@ -116,15 +130,15 @@ public class NetworkResource internal constructor(
     /**
      * Disconnects a container to a network.
      *
-     * @param id The network id or name.
+     * @param network The network id or name.
      * @param container The id or name of the container to connect to the network.
      * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkDisconnect">NetworkDisconnect</a>
      */
     public suspend fun disconnectContainer(
-        id: String,
+        network: String,
         container: String,
     ) {
-        httpClient.post("$BasePath/$id/disconnect") {
+        httpClient.post("$BasePath/$network/disconnect") {
             setBody(mapOf("Container" to container))
         }
     }
@@ -136,7 +150,7 @@ public class NetworkResource internal constructor(
  * @param config The network configuration.
  * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkCreate">NetworkCreate</a>
  */
-public suspend inline fun NetworkResource.create(config: NetworkCreateOptions.() -> Unit): Network =
+public suspend inline fun NetworkResource.create(config: NetworkCreateOptions.() -> Unit): String =
     create(NetworkCreateOptions().apply(config))
 
 /**
@@ -163,10 +177,10 @@ public suspend inline fun NetworkResource.inspect(
 /**
  * Deletes all unused networks.
  *
- * @param options The network prune options.
+ * @param options The prune options configuration block.
+ * @return Information about the pruned networks.
  *
- * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkPrune">NetworkPrune</a>
+ * @see <a href="https://docs.docker.com/engine/api/latest/#operation/NetworkPrune"
  */
-public suspend inline fun NetworkResource.prune(options: NetworkPruneOptions.() -> Unit) {
+public suspend inline fun NetworkResource.prune(options: NetworkPruneOptions.() -> Unit): NetworkPruneResult =
     prune(NetworkPruneOptions().apply(options))
-}
