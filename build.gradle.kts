@@ -37,6 +37,10 @@ kotlin {
         enabled.set(true)
     }
 
+    compilerOptions {
+        freeCompilerArgs.addAll(listOf("-Xconsistent-data-class-copy-visibility"))
+    }
+
     jvm {
         tasks.named<Test>("jvmTest") {
             useJUnitPlatform()
