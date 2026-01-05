@@ -1,8 +1,14 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "docker-kotlin",
-    "main": "index.js",
     "compatibility_date": "2026-01-03",
+    "routes": [
+      {
+        "pattern": "docs.devnatan.me/docker-kotlin/*",
+        "zone_id": "35020df443d6713173cf60f4d2df0db1"
+      }
+    ],
+    "workers_dev": false,
     "assets": {
       "directory": "./public"
     },
