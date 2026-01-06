@@ -8,9 +8,7 @@ Use the following command to generate the documentation:
 ./gradlew dokkaGenerateHtml
 ```
 
-Then you can open the `index.html` file in the `public/dokka` directory.
-
 Use `yarn dev` to preview the documentation locally.
 
-> [!INFO]
-> Put /docker-kotlin in the URL to be able to access the documentation.
+> [!IMPORTANT]
+> Append /docker-kotlin to the URL to be able to access the documentation.
