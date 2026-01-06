@@ -1,4 +1,5 @@
 import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier
+import org.jetbrains.dokka.gradle.tasks.DokkaGenerateTask
 import org.jmailen.gradle.kotlinter.support.ReporterType
 
 plugins {
@@ -123,9 +124,24 @@ tasks.check {
     dependsOn("installKotlinterPrePushHook")
 }
 
+tasks.withType<DokkaGenerateTask>().configureEach {
+    doLast {
+        val packageJsonFile = layout.projectDirectory.file("docs/package.json").asFile
+        val currentVersion = project.version.toString()
+
+        val packageJsonContent = packageJsonFile.readText()
+        val updatedContent = packageJsonContent.replaceFirst(
+            Regex(""""version":\s*"[^"]*""""),
+            """"version": "$currentVersion"""",
+        )
+        packageJsonFile.writeText(updatedContent)
+    }
+}
+
 kotlinter {
     reporters = arrayOf(ReporterType.html.name)
 }
+
 
 dokka {
     dokkaPublications.html {
