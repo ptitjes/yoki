@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngineConfig
+import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.UserAgent
@@ -27,61 +28,70 @@ import me.devnatan.dockerkt.DockerClient
 import me.devnatan.dockerkt.DockerResponseException
 import me.devnatan.dockerkt.GenericDockerErrorResponse
 
+internal expect val defaultHttpClientEngine: HttpClientEngineFactory<*>?
 internal expect fun <T : HttpClientEngineConfig> HttpClientConfig<out T>.configureHttpClient(client: DockerClient)
 
 internal fun createHttpClient(client: DockerClient): HttpClient {
     check(client.config.socketPath.isNotBlank()) { "Socket path cannot be blank" }
-    return HttpClient {
-        expectSuccess = true
 
-        install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                },
+    val clientEngine = defaultHttpClientEngine
+    return if (clientEngine != null) {
+        HttpClient(clientEngine) { configure(client) }
+    } else {
+        HttpClient { configure(client) }
+    }
+}
+
+private fun HttpClientConfig<*>.configure(client: DockerClient) {
+    expectSuccess = true
+
+    install(ContentNegotiation) {
+        json(
+            Json {
+                ignoreUnknownKeys = true
+            },
+        )
+    }
+
+    if (client.config.debugHttpCalls) {
+        install(Logging) {
+            logger = Logger.SIMPLE
+            level = LogLevel.ALL
+        }
+    }
+
+    install(UserAgent) { agent = "docker-kotlin" }
+    configureHttpClient(client)
+
+    HttpResponseValidator {
+        handleResponseExceptionWithRequest { exception, _ ->
+            val responseException = exception as? ResponseException ?: return@handleResponseExceptionWithRequest
+            val exceptionResponse = responseException.response
+            println("exceptionResponse = ${exceptionResponse.body<String>()}")
+
+            val errorMessage =
+                runCatching {
+                    exceptionResponse.body<GenericDockerErrorResponse>()
+                }.getOrNull()?.message
+            throw DockerResponseException(
+                cause = exception,
+                message = errorMessage,
+                statusCode = exceptionResponse.status,
             )
         }
+    }
 
-        if (client.config.debugHttpCalls) {
-            install(Logging) {
-                logger = Logger.SIMPLE
-                level = LogLevel.ALL
-            }
-        }
+    defaultRequest {
+        contentType(ContentType.Application.Json)
 
-        install(UserAgent) { agent = "docker-kotlin" }
-        configureHttpClient(client)
-
-        HttpResponseValidator {
-            handleResponseExceptionWithRequest { exception, _ ->
-                val responseException = exception as? ResponseException ?: return@handleResponseExceptionWithRequest
-                val exceptionResponse = responseException.response
-                println("exceptionResponse = ${exceptionResponse.body<String>()}")
-
-                val errorMessage =
-                    runCatching {
-                        exceptionResponse.body<GenericDockerErrorResponse>()
-                    }.getOrNull()?.message
-                throw DockerResponseException(
-                    cause = exception,
-                    message = errorMessage,
-                    statusCode = exceptionResponse.status,
-                )
-            }
-        }
-
-        defaultRequest {
-            contentType(ContentType.Application.Json)
-
-            // workaround for URL prepending
-            // https://github.com/ktorio/ktor/issues/537#issuecomment-603272476
-            url.takeFrom(
-                URLBuilder(createUrlBuilder(client.config.socketPath)).apply {
-                    encodedPath = "/v${client.config.apiVersion}/"
-                    encodedPath += url.encodedPath
-                },
-            )
-        }
+        // workaround for URL prepending
+        // https://github.com/ktorio/ktor/issues/537#issuecomment-603272476
+        url.takeFrom(
+            URLBuilder(createUrlBuilder(client.config.socketPath)).apply {
+                encodedPath = "/v${client.config.apiVersion}/"
+                encodedPath += url.encodedPath
+            },
+        )
     }
 }
 
@@ -91,7 +101,8 @@ private fun createUrlBuilder(socketPath: String): URLBuilder =
         URLBuilder(
             protocol = URLProtocol.HTTP,
             port = DockerSocketPort,
-            host = socketPath.substringAfter(UnixSocketPrefix).encodeToByteArray().toHexString() + EncodedHostnameSuffix,
+            host = socketPath.substringAfter(UnixSocketPrefix).encodeToByteArray()
+                .toHexString() + EncodedHostnameSuffix,
         )
     } else {
         val url = Url(socketPath)

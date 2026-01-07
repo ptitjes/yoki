@@ -2,6 +2,8 @@ package me.devnatan.dockerkt.io
 
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngineConfig
+import io.ktor.client.engine.HttpClientEngineFactory
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.engine.okhttp.OkHttpConfig
 import me.devnatan.dockerkt.DockerClient
 import okhttp3.Interceptor
@@ -33,6 +35,8 @@ private class UpgradeHeaderInterceptor : Interceptor {
         return chain.proceed(request)
     }
 }
+
+internal actual val defaultHttpClientEngine: HttpClientEngineFactory<*>? get() = OkHttp
 
 internal actual fun <T : HttpClientEngineConfig> HttpClientConfig<out T>.configureHttpClient(client: DockerClient) {
     engine {
