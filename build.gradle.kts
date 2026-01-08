@@ -166,7 +166,7 @@ dokka {
 }
 
 mavenPublishing {
-    publishToMavenCentral(automaticRelease = true)
+    publishToMavenCentral(automaticRelease = true, validateDeployment = true)
     signAllPublications()
     pomFromGradleProperties()
     configureBasedOnAppliedPlugins()
