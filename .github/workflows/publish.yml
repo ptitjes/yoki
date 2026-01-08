@@ -3,7 +3,12 @@ name: Publish Release
 on:
   push:
     tags: [ 'v*.*.*' ]
-    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        required: true
+        description: "Version to be published"
 
 jobs:
   publish:
@@ -36,7 +41,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
 
       - name: Publish to Maven Central
-        run: ./gradlew publishAndReleaseToMavenCentral ${{ startsWith(github.ref, 'refs/tags/') && format('-Pversion={0}', github.ref_name) || '' }} --stacktrace
+        run: ./gradlew publishAndReleaseToMavenCentral ${{ startsWith(github.ref, 'refs/tags/') && format('-Pversion={0}', github.ref_name) || format('-Pversion={0}', inputs.version) }} --stacktrace
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_TOKEN }}
