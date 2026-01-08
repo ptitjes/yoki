@@ -29,6 +29,7 @@ import me.devnatan.dockerkt.DockerResponseException
 import me.devnatan.dockerkt.GenericDockerErrorResponse
 
 internal expect val defaultHttpClientEngine: HttpClientEngineFactory<*>?
+
 internal expect fun <T : HttpClientEngineConfig> HttpClientConfig<out T>.configureHttpClient(client: DockerClient)
 
 internal fun createHttpClient(client: DockerClient): HttpClient {
@@ -101,8 +102,11 @@ private fun createUrlBuilder(socketPath: String): URLBuilder =
         URLBuilder(
             protocol = URLProtocol.HTTP,
             port = DockerSocketPort,
-            host = socketPath.substringAfter(UnixSocketPrefix).encodeToByteArray()
-                .toHexString() + EncodedHostnameSuffix,
+            host =
+                socketPath
+                    .substringAfter(UnixSocketPrefix)
+                    .encodeToByteArray()
+                    .toHexString() + EncodedHostnameSuffix,
         )
     } else {
         val url = Url(socketPath)

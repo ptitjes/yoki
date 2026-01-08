@@ -169,4 +169,5 @@ mavenPublishing {
     publishToMavenCentral(automaticRelease = true)
     signAllPublications()
     pomFromGradleProperties()
+    configureBasedOnAppliedPlugins()
 }
