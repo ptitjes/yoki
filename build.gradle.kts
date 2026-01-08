@@ -163,3 +163,8 @@ dokka {
         }
     }
 }
+
+mavenPublishing {
+    publishToMavenCentral(automaticRelease = true)
+    signAllPublications()
+}
